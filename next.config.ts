@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true
   },
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/chatdmc__assignment1' : '',
-  basePath: process.env.NODE_ENV === 'production' ? '/chatdmc__assignment1' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/chatdmc_assignment1' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/chatdmc_assignment1' : '',
 };
 
 export default nextConfig;
