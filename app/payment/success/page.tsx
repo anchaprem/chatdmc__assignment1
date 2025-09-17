@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircleIcon } from 'lucide-react';
 import { storeSubscription } from '@/lib/subscription-utils';
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const [loading, setLoading] = useState(true);
-  const [sessionData, setSessionData] = useState<any>(null);
+  const [sessionData, setSessionData] = useState<{ plan: string; amount: number; currency: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,7 +39,7 @@ export default function PaymentSuccessPage() {
       const data = await response.json();
       setSessionData(data.session);
       
-      // Store subscription data if available
+      // Save subscription data if available
       if (data.subscription) {
         storeSubscription(data.subscription);
       }
@@ -136,5 +136,20 @@ export default function PaymentSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

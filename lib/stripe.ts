@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { loadStripe } from '@stripe/stripe-js';
 
+// Check environment variables
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
 }
@@ -15,7 +16,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   typescript: true,
 });
 
-// Client-side Stripe promise
+// Client-side Stripe instance
 export const getStripe = () => {
   return loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 };

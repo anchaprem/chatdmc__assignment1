@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Read current subscriptions
+    // Get current subscriptions
     const subscriptions = readSubscriptionsFromFile();
     const subscriptionIndex = subscriptions.findIndex(sub => sub.id === subscriptionId);
 
@@ -23,16 +23,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update the subscription
+    // Update subscription data
     const updatedSubscription = {
       ...subscriptions[subscriptionIndex],
       ...updates,
-      // Ensure dates are properly handled
       currentPeriodStart: subscriptions[subscriptionIndex].currentPeriodStart,
       currentPeriodEnd: subscriptions[subscriptionIndex].currentPeriodEnd,
     };
 
-    // Store updated subscription
+    // Save updated subscription
     storeSubscriptionToFile(updatedSubscription);
 
     return NextResponse.json({ 

@@ -1,10 +1,12 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { Subscription } from '@/types/subscription';
 
-const STORAGE_FILE = path.join(process.cwd(), 'data', 'subscriptions.json');
+// Store data in temp directory for deployment
+const STORAGE_FILE = path.join(os.tmpdir(), 'subscriptions.json');
 
-// Ensure data directory exists
+// Make sure directory exists
 function ensureDataDir() {
   const dataDir = path.dirname(STORAGE_FILE);
   if (!fs.existsSync(dataDir)) {
@@ -22,7 +24,7 @@ export function readSubscriptionsFromFile(): Subscription[] {
     const data = fs.readFileSync(STORAGE_FILE, 'utf8');
     const parsed = JSON.parse(data);
     // Convert date strings back to Date objects
-    return parsed.map((sub: any) => ({
+    return parsed.map((sub: { currentPeriodStart: string; currentPeriodEnd: string; [key: string]: unknown }) => ({
       ...sub,
       currentPeriodStart: new Date(sub.currentPeriodStart),
       currentPeriodEnd: new Date(sub.currentPeriodEnd),

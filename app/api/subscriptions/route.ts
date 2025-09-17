@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { readSubscriptionsFromFile, writeSubscriptionsToFile } from '@/lib/file-storage';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    // Read subscriptions from file storage
+    // Get subscriptions from file
     const subscriptions = readSubscriptionsFromFile();
     
     return NextResponse.json({ subscriptions });
@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE() {
   try {
-    // Clear all subscriptions from file storage
+    // Clear all subscriptions
     writeSubscriptionsToFile([]);
     
     return NextResponse.json({ success: true, message: 'All subscriptions cleared' });

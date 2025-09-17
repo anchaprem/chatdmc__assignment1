@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { PricingPlan } from '@/components/PricingPlan';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SUBSCRIPTION_PLANS, getStoredSubscriptions } from '@/lib/subscription-utils';
@@ -11,11 +11,11 @@ export default function PricingPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const fromDashboard = searchParams.get('from') === 'dashboard';
+  // const searchParams = useSearchParams();
+  // const fromDashboard = searchParams.get('from') === 'dashboard';
 
   useEffect(() => {
-    // Check if user has active subscriptions
+    // Check for existing subscriptions
     const subscriptions = getStoredSubscriptions();
     const activeSubscription = subscriptions.find(
       sub => sub.status === 'active' && !sub.cancelAtPeriodEnd
@@ -24,7 +24,7 @@ export default function PricingPage() {
   }, []);
 
   const handleSubscribe = async (planId: string) => {
-    // Prevent subscription if user has active subscription
+    // Don't allow multiple subscriptions
     if (hasActiveSubscription) {
       setError('You already have an active subscription. Please cancel it first to change plans.');
       return;
@@ -34,6 +34,7 @@ export default function PricingPage() {
     setError(null);
 
     try {
+      // Create Stripe checkout session
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -42,7 +43,7 @@ export default function PricingPage() {
         body: JSON.stringify({
           priceId: SUBSCRIPTION_PLANS.find(p => p.id === planId)?.stripePriceId,
           successUrl: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/payment/cancel`,
+          cancelUrl: `${window.location.origin}/cancel`,
         }),
       });
 
@@ -83,7 +84,7 @@ export default function PricingPage() {
             <AlertDescription>
               <strong>Active Subscription Detected:</strong> You currently have an active subscription. 
               To change plans, please go to your dashboard and cancel your current subscription first. 
-              You'll continue to have access until the end of your billing period.
+              You&apos;ll continue to have access until the end of your billing period.
             </AlertDescription>
           </Alert>
         )}
@@ -107,6 +108,10 @@ export default function PricingPage() {
               <p><strong>Success:</strong> 4242 4242 4242 4242</p>
               <p><strong>Decline:</strong> 4000 0000 0000 0002</p>
               <p>Use any future expiry date and any CVC</p>
+              <p className="text-xs text-orange-600 mt-2">
+                <strong>Note:</strong> If a card is declined, you&apos;ll stay on the checkout page. 
+                Click &quot;Cancel&quot; to return to our site and try again.
+              </p>
             </div>
           </div>
         </div>

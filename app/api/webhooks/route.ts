@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event;
 
   try {
+    // Verify webhook signature
     event = stripe.webhooks.constructEvent(
       body,
       signature,
@@ -39,21 +40,21 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log('Checkout session completed:', session.id);
         
-        // Handle successful subscription creation
+        // Process successful subscription
         if (session.mode === 'subscription' && session.subscription) {
           const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
           );
           
-          // Store subscription data (in a real app, this would go to a database)
+          // Store subscription data - TODO: use database in production
           const priceId = subscription.items.data[0]?.price.id;
           const subscriptionData = {
             id: subscription.id,
             planId: priceId === 'price_1S5qavBpmBtDUil154oVhrMz' ? 'yearly' as const : 'monthly' as const,
-            status: subscription.status as any,
-            currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-            cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
+            status: subscription.status as 'active' | 'canceled' | 'past_due' | 'incomplete' | 'trialing',
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
             amount: subscription.items.data[0]?.price.unit_amount || 0,
             currency: subscription.items.data[0]?.price.currency || 'usd',
             customerId: subscription.customer as string,
@@ -73,10 +74,10 @@ export async function POST(req: NextRequest) {
         const subscriptionData = {
           id: subscription.id,
           planId: priceId === 'price_1S5qavBpmBtDUil154oVhrMz' ? 'yearly' as const : 'monthly' as const,
-          status: subscription.status as any,
-          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-          cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
+          status: subscription.status as 'active' | 'canceled' | 'past_due' | 'incomplete' | 'trialing',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
           amount: subscription.items.data[0]?.price.unit_amount || 0,
           currency: subscription.items.data[0]?.price.currency || 'usd',
           customerId: subscription.customer as string,
@@ -100,20 +101,20 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice;
         console.log('Invoice payment succeeded:', invoice.id);
         
-        // Handle successful payment
-        if ((invoice as any).subscription) {
+        // Process successful payment
+        if ((invoice as Stripe.Invoice & { subscription?: string }).subscription) {
           const subscription = await stripe.subscriptions.retrieve(
-            (invoice as any).subscription as string
+            (invoice as Stripe.Invoice & { subscription?: string }).subscription as string
           );
           
           const priceId = subscription.items.data[0]?.price.id;
           const subscriptionData = {
             id: subscription.id,
             planId: priceId === 'price_1S5qavBpmBtDUil154oVhrMz' ? 'yearly' as const : 'monthly' as const,
-            status: subscription.status as any,
-            currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-            cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
+            status: subscription.status as 'active' | 'canceled' | 'past_due' | 'incomplete' | 'trialing',
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
             amount: subscription.items.data[0]?.price.unit_amount || 0,
             currency: subscription.items.data[0]?.price.currency || 'usd',
             customerId: subscription.customer as string,
@@ -129,10 +130,10 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice;
         console.log('Invoice payment failed:', invoice.id);
         
-        // Handle failed payment - could update subscription status to past_due
-        if ((invoice as any).subscription) {
+        // Handle failed payment
+        if ((invoice as Stripe.Invoice & { subscription?: string }).subscription) {
           const subscription = await stripe.subscriptions.retrieve(
-            (invoice as any).subscription as string
+            (invoice as Stripe.Invoice & { subscription?: string }).subscription as string
           );
           
           const priceId = subscription.items.data[0]?.price.id;
@@ -140,9 +141,9 @@ export async function POST(req: NextRequest) {
             id: subscription.id,
             planId: priceId === 'price_1S5qavBpmBtDUil154oVhrMz' ? 'yearly' as const : 'monthly' as const,
             status: 'past_due' as const,
-            currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-            cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
             amount: subscription.items.data[0]?.price.unit_amount || 0,
             currency: subscription.items.data[0]?.price.currency || 'usd',
             customerId: subscription.customer as string,

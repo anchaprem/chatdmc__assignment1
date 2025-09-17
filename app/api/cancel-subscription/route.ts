@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Cancel the subscription at the end of the current period
+    // Cancel subscription at period end
     const subscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: true,
     });
@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
         id: subscription.id,
         status: subscription.status,
         cancel_at_period_end: subscription.cancel_at_period_end,
-        current_period_end: subscription.current_period_end,
       },
     });
   } catch (error) {

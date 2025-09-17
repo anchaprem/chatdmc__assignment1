@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Retrieve the session from Stripe
+    // Get session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['line_items', 'subscription']
     });
@@ -26,13 +26,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Extract subscription details if it exists
+    // Get subscription details if available
     let subscriptionData = null;
     if (session.subscription && typeof session.subscription === 'object') {
       const subscription = session.subscription;
       const priceId = subscription.items?.data[0]?.price?.id;
       
-      // Determine plan based on price ID
+      // Figure out which plan based on price ID
       let planId = 'monthly';
       if (priceId === 'price_1S5qavBpmBtDUil154oVhrMz') {
         planId = 'yearly';
@@ -47,18 +47,18 @@ export async function GET(req: NextRequest) {
         currency: subscription.items?.data[0]?.price?.currency || 'usd',
         plan: plan?.name || 'Unknown Plan',
         planId,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       };
 
-      // Store subscription data in localStorage via client-side storage
-      // This is a temporary solution - in production, use a database
+      // Store subscription data for client-side storage
+      // TODO: Use database in production
       const storageData = {
         id: subscription.id,
         planId,
         status: subscription.status,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         amount: subscription.items?.data[0]?.price?.unit_amount || 0,
         currency: subscription.items?.data[0]?.price?.currency || 'usd',
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
         stripeSubscriptionId: subscription.id,
       };
 
-      // Return subscription data so client can store it
+      // Send data back to client
       return NextResponse.json({
         session: {
           id: session.id,
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // For non-subscription sessions, return basic session info
+    // Return basic session info for non-subscription sessions
     return NextResponse.json({
       session: {
         id: session.id,

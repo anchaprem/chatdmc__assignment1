@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create Stripe checkout session
+    // Create checkout session with Stripe
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
       billing_address_collection: 'required',
       automatic_tax: {
         enabled: false,
+      },
+      // Add custom text to make cancel option more visible
+      custom_text: {
+        submit: {
+          message: 'Having trouble? You can cancel and try again anytime.',
+        },
       },
     });
 

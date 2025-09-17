@@ -21,10 +21,10 @@ export function SubscriptionManager() {
   const loadSubscriptions = async () => {
     setLoading(true);
     try {
-      // Load from both localStorage and server storage
+      // TODO: Need to optimize this - loading from both local and server
       const localSubscriptions = getStoredSubscriptions();
       
-      // Also try to load from server-side storage
+      // Try to get data from server as well
       let serverSubscriptions: Subscription[] = [];
       try {
         const response = await fetch('/api/subscriptions');
@@ -33,23 +33,23 @@ export function SubscriptionManager() {
           serverSubscriptions = data.subscriptions || [];
         }
       } catch (serverError) {
-        console.log('Could not load server subscriptions:', serverError);
+        console.log('Server error - using local data only:', serverError);
       }
       
-      // Merge subscriptions, preferring server data for existing IDs
+      // Combine local and server data - server data takes priority
       const allSubscriptions = [...localSubscriptions];
       serverSubscriptions.forEach(serverSub => {
         const existingIndex = allSubscriptions.findIndex(sub => sub.id === serverSub.id);
         if (existingIndex >= 0) {
-          // Merge server data with local data, preserving important updates
+          // Update existing subscription with server data
           allSubscriptions[existingIndex] = {
             ...allSubscriptions[existingIndex],
             ...serverSub,
-            // Ensure dates are properly handled
             currentPeriodStart: new Date(serverSub.currentPeriodStart),
             currentPeriodEnd: new Date(serverSub.currentPeriodEnd),
           };
         } else {
+          // Add new subscription from server
           allSubscriptions.push({
             ...serverSub,
             currentPeriodStart: new Date(serverSub.currentPeriodStart),
@@ -60,7 +60,7 @@ export function SubscriptionManager() {
       
       setSubscriptions(allSubscriptions);
       
-      // Update localStorage with merged data
+      // Save to localStorage for offline access
       if (allSubscriptions.length > 0) {
         localStorage.setItem('subscriptions', JSON.stringify(allSubscriptions));
       }
@@ -73,6 +73,7 @@ export function SubscriptionManager() {
 
   const handleCancelSubscription = async (subscriptionId: string) => {
     try {
+      // Call API to cancel subscription
       const response = await fetch('/api/cancel-subscription', {
         method: 'POST',
         headers: {
@@ -85,9 +86,7 @@ export function SubscriptionManager() {
         throw new Error('Failed to cancel subscription');
       }
 
-      const result = await response.json();
-
-      // Update local state immediately
+      // Update UI immediately
       setSubscriptions(prev => 
         prev.map(sub => 
           sub.id === subscriptionId 
@@ -96,10 +95,10 @@ export function SubscriptionManager() {
         )
       );
 
-      // Update localStorage with the cancelled subscription
+      // Update local storage
       updateStoredSubscription(subscriptionId, { cancelAtPeriodEnd: true });
 
-      // Also update server-side storage
+      // Try to update server storage too
       try {
         await fetch('/api/update-subscription', {
           method: 'POST',
@@ -112,10 +111,10 @@ export function SubscriptionManager() {
           }),
         });
       } catch (serverError) {
-        console.log('Could not update server storage:', serverError);
+        console.log('Server update failed:', serverError);
       }
 
-      // Refresh subscriptions to ensure consistency
+      // Reload data to make sure everything is in sync
       await loadSubscriptions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel subscription');
@@ -125,26 +124,11 @@ export function SubscriptionManager() {
   const handleClearStorage = () => {
     if (confirm('Clear all subscription data? This will remove all stored subscriptions.')) {
       localStorage.removeItem('subscriptions');
-      // Also clear server-side storage by calling the clear endpoint if it exists
+      // Clear server storage too
       fetch('/api/subscriptions', { method: 'DELETE' }).catch(() => {
-        // Ignore errors - this is for dev purposes
+        // Ignore if server call fails
       });
       setSubscriptions([]);
-    }
-  };
-
-  const handleDebugSubscriptions = async () => {
-    try {
-      const localSubs = getStoredSubscriptions();
-      const serverResponse = await fetch('/api/debug-subscriptions');
-      const serverData = await serverResponse.json();
-      
-      console.log('=== SUBSCRIPTION DEBUG ===');
-      console.log('Local Storage:', localSubs);
-      console.log('Server Storage:', serverData);
-      alert(`Debug info logged to console. Local: ${localSubs.length}, Server: ${serverData.fileStorage.length}`);
-    } catch (error) {
-      console.error('Debug error:', error);
     }
   };
 
@@ -173,17 +157,14 @@ export function SubscriptionManager() {
         <div className="text-center py-16">
           <h3 className="text-lg font-medium mb-2">No Active Subscriptions</h3>
           <p className="text-muted-foreground mb-6">
-            You don't have any active subscriptions. Choose a plan to get started.
+            You don&apos;t have any active subscriptions. Choose a plan to get started.
           </p>
           <div className="flex gap-4 justify-center">
             <Button onClick={() => router.push('/pricing')}>
               View Pricing Plans
             </Button>
             <Button variant="outline" onClick={handleClearStorage}>
-              Clear Storage (Dev)
-            </Button>
-            <Button variant="outline" onClick={handleDebugSubscriptions}>
-              Debug Subscriptions
+              Clear Storage
             </Button>
           </div>
         </div>
@@ -215,7 +196,7 @@ export function SubscriptionManager() {
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-3">
                     To change your plan, you must first cancel your current active subscription. 
-                    You'll continue to have access until the end of your billing period.
+                    You&apos;ll continue to have access until the end of your billing period.
                   </p>
                   <Button 
                     variant="outline"
@@ -230,13 +211,7 @@ export function SubscriptionManager() {
                 variant="outline" 
                 onClick={handleClearStorage}
               >
-                Clear Storage (Dev)
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleDebugSubscriptions}
-              >
-                Debug Subscriptions
+                Clear Storage
               </Button>
             </div>
           </div>

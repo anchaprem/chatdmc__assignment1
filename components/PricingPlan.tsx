@@ -8,6 +8,7 @@ import { CheckIcon } from 'lucide-react';
 import { SubscriptionPlan } from '@/types/subscription';
 import { formatPrice } from '@/lib/subscription-utils';
 
+// Props for pricing plan component
 interface PricingPlanProps {
   plan: SubscriptionPlan;
   onSubscribe: (planId: string) => Promise<void>;

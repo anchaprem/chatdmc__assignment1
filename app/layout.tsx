@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
+// Setup fonts
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -13,6 +14,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Page metadata
 export const metadata: Metadata = {
   title: "Stripe Subscription App",
   description: "Subscription management system with Stripe integration",
@@ -28,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Navigation bar */}
         <nav className="border-b">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">

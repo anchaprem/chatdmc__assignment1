@@ -1,6 +1,6 @@
 import { SubscriptionPlan, Subscription, SubscriptionStatus } from '@/types/subscription';
 
-// Subscription plans configuration
+// Define subscription plans
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'monthly',
@@ -9,7 +9,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     price: 25,
     currency: 'usd',
     interval: 'month',
-    stripePriceId: 'price_1S5qauBpmBtDUil1ZfM5aeXP', // Monthly plan price ID
+    stripePriceId: 'price_1S5qauBpmBtDUil1ZfM5aeXP', // Monthly price ID
     features: [
       'Full access to all features',
       'Email support',
@@ -24,7 +24,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     price: 250,
     currency: 'usd',
     interval: 'year',
-    stripePriceId: 'price_1S5qavBpmBtDUil154oVhrMz', // Yearly plan price ID
+    stripePriceId: 'price_1S5qavBpmBtDUil154oVhrMz', // Yearly price ID
     features: [
       'Full access to all features',
       'Priority email support',
@@ -88,23 +88,9 @@ export const getDaysUntilBilling = (subscription: Subscription): number => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-// Mock data for development/testing
-export const MOCK_SUBSCRIPTIONS: Subscription[] = [
-  {
-    id: 'sub_mock_1',
-    planId: 'monthly',
-    status: 'active',
-    currentPeriodStart: new Date('2024-01-01'),
-    currentPeriodEnd: new Date('2024-02-01'),
-    cancelAtPeriodEnd: false,
-    amount: 2500, // $25.00 in cents
-    currency: 'usd',
-    customerId: 'cus_mock_1',
-    stripeSubscriptionId: 'sub_stripe_mock_1'
-  }
-];
+// Removed mock data - not needed for production
 
-// Local storage utilities for subscription management
+// Helper functions for localStorage
 export const getStoredSubscriptions = (): Subscription[] => {
   if (typeof window === 'undefined') return [];
   
@@ -114,7 +100,7 @@ export const getStoredSubscriptions = (): Subscription[] => {
     
     const parsed = JSON.parse(stored);
     // Convert date strings back to Date objects
-    return parsed.map((sub: any) => ({
+    return parsed.map((sub: { currentPeriodStart: string; currentPeriodEnd: string; [key: string]: unknown }) => ({
       ...sub,
       currentPeriodStart: new Date(sub.currentPeriodStart),
       currentPeriodEnd: new Date(sub.currentPeriodEnd),
